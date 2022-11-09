@@ -25,6 +25,24 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+router.get("/friends/:userId",async (req,res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    const friends = await Promise.all(
+      user.followins.map(friendId => {
+        return User.findById(friendId);
+      })
+    );
+    let friendList = [];
+    friends.map(friend => {
+      const {_id,username,profilePicture} = friend;
+      friendList.push({ _id,username,profilePicture})
+    })
+  } catch (error) {
+    
+  }
+})
+
 router.delete("/:id", async (req, res) => {
   if (req.body.userId === req.params.id || req.body.isAdmin) {
     try {
@@ -38,15 +56,20 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+
+router.get("/", async (req, res) => {
+  const userId = req.query.userId;
+  const username = req.query.username;
   try {
-    const user = await User.findById(req.params.id);
+    const user = userId?  await User.findById(userId): await User.findOne({username:username})
     const { password, updatedAt, ...other } = user._doc;
     res.status(200).json(other);
   } catch (err) {
     res.status(500).json(err);
   }
 });
+
+
 
 
 router.put("/:d/follow", async (req, res) => {
@@ -66,6 +89,7 @@ router.put("/:d/follow", async (req, res) => {
     res.status(403).json("you cant follow yourself");
   }
 });
+
 
 
 router.put("/:d/unfollow", async (req, res) => {
